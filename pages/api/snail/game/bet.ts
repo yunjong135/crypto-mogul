@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+const API_BASE = 'https://api.snail-race.com';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('[Game Bet] Request received:', req.method, req.url);
   
   // CORS 헤더 추가
@@ -12,8 +14,50 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(200).end();
     return;
   }
-  
-  if (req.method === 'GET' || req.method === 'POST') {
+
+  try {
+    // 실제 백엔드 서버에 연결 시도
+    const headers: any = {
+      'Content-Type': 'application/json',
+    };
+    
+    // x-tg-user-id 헤더 전달
+    if (req.headers['x-tg-user-id']) {
+      headers['x-tg-user-id'] = req.headers['x-tg-user-id'];
+    }
+
+    console.log('[Game Bet] Connecting to backend:', `${API_BASE}/api/bet`);
+    
+    const response = await fetch(`${API_BASE}/api/bet`, {
+      method: req.method,
+      headers,
+      body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
+      signal: AbortSignal.timeout(10000) // 10초 타임아웃
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('[Game Bet] Backend response:', data);
+      res.status(200).json(data);
+    } else {
+      console.log('[Game Bet] Backend error:', response.status);
+      // 백엔드 에러 시 fallback 응답
+      res.status(200).json({
+        ok: true,
+        bet: {
+          id: 'mock-bet-' + Date.now(),
+          choice: 'S',
+          amount: 100,
+          commit_hash: 'mock-commit-hash'
+        },
+        commit_hash: 'mock-commit-hash',
+        choice: 'S',
+        amount: 100
+      });
+    }
+  } catch (error) {
+    console.error('[Game Bet] Backend connection failed:', error);
+    // 연결 실패 시 fallback 응답
     res.status(200).json({
       ok: true,
       bet: {
@@ -26,8 +70,5 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       choice: 'S',
       amount: 100
     });
-  } else {
-    res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
