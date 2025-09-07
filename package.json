@@ -9,8 +9,9 @@
     "start": "next start"
   },
   "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-slot": "latest",
+    "@radix-ui/react-toast": "latest",
     "@remix-run/react": "latest",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
