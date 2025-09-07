@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useToast } from "@/hooks/use-toast"
+import { fetchStocks, fetchHistory, tradeBuy, tradeSell } from "@/lib/api"
 
 interface Stock {
   symbol: string
@@ -42,17 +43,11 @@ export function StocksList({ tgUserId, compact = false, onTradeComplete }: Stock
   const [chartLoading, setChartLoading] = useState(false)
   const { toast } = useToast()
 
-  const fetchStocks = async () => {
+  const fetchStocksData = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch("https://api.snail-race.com/stocks/list", { cache: "no-store" })
-
-      if (!response.ok) {
-        throw new Error("API connection failed")
-      }
-
-      const data = await response.json()
+      const data = await fetchStocks()
 
       setStocks((prevStocks) => {
         return data.map((newStock: Stock) => {
@@ -92,16 +87,7 @@ export function StocksList({ tgUserId, compact = false, onTradeComplete }: Stock
   const fetchStockHistory = async (symbol: string) => {
     try {
       setChartLoading(true)
-      const response = await fetch(
-        `https://api.snail-race.com/stocks/history?symbol=${symbol}&minutes=4320&limit=1000`,
-        { cache: "no-store" },
-      )
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch stock history")
-      }
-
-      const data = await response.json()
+      const data = await fetchHistory(symbol, { minutes: 4320, limit: 1000 })
       setChartData(data)
     } catch (err) {
       console.error("Error fetching stock history:", err)
@@ -140,27 +126,10 @@ export function StocksList({ tgUserId, compact = false, onTradeComplete }: Stock
     }
 
     try {
-      const endpoint =
-        action === "buy" ? "https://api.snail-race.com/trade/buy" : "https://api.snail-race.com/trade/sell"
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tg-user-id": `u-${tgUserId}`,
-        },
-        body: JSON.stringify({
-          symbol,
-          qty: tradeAmount,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `Failed to ${action} stock`)
-      }
-
-      const result = await response.json()
+      const result =
+        action === "buy"
+          ? await tradeBuy(tgUserId.toString(), { symbol, qty: tradeAmount })
+          : await tradeSell(tgUserId.toString(), { symbol, qty: tradeAmount })
 
       toast({
         title: "Success",
@@ -168,7 +137,7 @@ export function StocksList({ tgUserId, compact = false, onTradeComplete }: Stock
       })
 
       onTradeComplete?.()
-      fetchStocks()
+      fetchStocksData()
       setSelectedStock(null)
       setTradeAmount(1)
     } catch (err) {
@@ -182,9 +151,9 @@ export function StocksList({ tgUserId, compact = false, onTradeComplete }: Stock
   }
 
   useEffect(() => {
-    fetchStocks()
+    fetchStocksData()
 
-    const interval = setInterval(fetchStocks, 10000)
+    const interval = setInterval(fetchStocksData, 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -216,7 +185,7 @@ export function StocksList({ tgUserId, compact = false, onTradeComplete }: Stock
         <h3 className="text-lg font-bold text-white mb-4">{compact ? "Quick Trade" : "Stock Market"}</h3>
         <div className="text-center py-8 text-gray-400">
           <p>API connection failed</p>
-          <Button onClick={fetchStocks} variant="outline" size="sm" className="mt-2 bg-transparent">
+          <Button onClick={fetchStocksData} variant="outline" size="sm" className="mt-2 bg-transparent">
             Retry
           </Button>
         </div>

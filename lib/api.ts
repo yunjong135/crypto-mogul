@@ -33,39 +33,103 @@ interface Purchase {
   created_at: string
 }
 
+export const BASE = "/api/snail" // All API calls go through internal proxy
+
+// Stock Trading APIs
+export async function fetchStocks() {
+  const r = await fetch(`${BASE}/stocks/list`, { cache: "no-store" })
+  if (!r.ok) throw new Error("Failed to fetch stocks")
+  return r.json()
+}
+
+export async function fetchHistory(symbol: string, params?: { limit?: number; minutes?: number }) {
+  const qs = new URLSearchParams()
+  if (params?.limit) qs.set("limit", String(params.limit))
+  if (params?.minutes) qs.set("minutes", String(params.minutes))
+  const r = await fetch(`${BASE}/stocks/history?symbol=${encodeURIComponent(symbol)}&${qs.toString()}`, {
+    cache: "no-store",
+  })
+  if (!r.ok) throw new Error("Failed to fetch history")
+  return r.json()
+}
+
+export async function fetchPortfolio(tgUserId: string) {
+  const r = await fetch(`${BASE}/portfolio`, {
+    headers: { "x-tg-user-id": tgUserId, "cache-control": "no-store" },
+  })
+  if (!r.ok) throw new Error("Failed to fetch portfolio")
+  return r.json()
+}
+
+export async function tradeBuy(tgUserId: string, body: { symbol: string; qty: number }) {
+  const r = await fetch(`${BASE}/trade/buy`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tg-user-id": tgUserId },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) throw new Error("Failed to buy")
+  return r.json()
+}
+
+export async function tradeSell(tgUserId: string, body: { symbol: string; qty: number }) {
+  const r = await fetch(`${BASE}/trade/sell`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tg-user-id": tgUserId },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) throw new Error("Failed to sell")
+  return r.json()
+}
+
+// Snail Racing Game APIs
+export async function gameInit(tgUserId: string, payload: { tg_user_id: string; username: string }) {
+  const r = await fetch(`${BASE}/game/init`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tg-user-id": tgUserId },
+    body: JSON.stringify(payload),
+  })
+  if (!r.ok) throw new Error("Failed to init")
+  return r.json()
+}
+
+export async function gameBalance(tgUserId: string) {
+  const r = await fetch(`${BASE}/game/balance`, {
+    headers: { "x-tg-user-id": tgUserId, "cache-control": "no-store" },
+  })
+  if (!r.ok) throw new Error("Failed to fetch balance")
+  return r.json()
+}
+
+export async function gameBet(tgUserId: string, body: { choice: "S" | "F"; amount: number }) {
+  const r = await fetch(`${BASE}/game/bet`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tg-user-id": tgUserId },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) throw new Error("Failed to bet")
+  return r.json()
+}
+
+export async function gameReveal(tgUserId: string, body: { bet_id: string }) {
+  const r = await fetch(`${BASE}/game/reveal`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tg-user-id": tgUserId },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) throw new Error("Failed to reveal")
+  return r.json()
+}
+
+export async function gameHealth() {
+  const r = await fetch(`${BASE}/game/health`, { cache: "no-store" })
+  if (!r.ok) throw new Error("Failed to check health")
+  return r.json()
+}
+
 export const initUser = async (tgUserId: string, username: string) => {
   try {
-    const supabase = createClient()
-
-    // Check if user exists
-    const { data: existingUser, error: fetchError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("tg_user_id", tgUserId)
-      .single()
-
-    if (existingUser) {
-      return { ok: true, user: existingUser }
-    }
-
-    // Create new user
-    const { data: newUser, error: insertError } = await supabase
-      .from("users")
-      .insert({
-        tg_user_id: tgUserId,
-        username: username || `User${tgUserId.slice(-4)}`,
-        balance: 1000, // Starting balance
-        snail_accumulated: 0,
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error("Error creating user:", insertError)
-      return { ok: false, error: insertError.message }
-    }
-
-    return { ok: true, user: newUser }
+    const result = await gameInit(tgUserId, { tg_user_id: tgUserId, username })
+    return { ok: true, user: result }
   } catch (error) {
     console.error("Init user error:", error)
     return { ok: false, error: "Failed to initialize user" }
@@ -74,16 +138,8 @@ export const initUser = async (tgUserId: string, username: string) => {
 
 export const getBalance = async (tgUserId: string) => {
   try {
-    const supabase = createClient()
-
-    const { data: user, error } = await supabase.from("users").select("*").eq("tg_user_id", tgUserId).single()
-
-    if (error) {
-      console.error("Error fetching balance:", error)
-      return { ok: false, error: error.message }
-    }
-
-    return { ok: true, user }
+    const result = await gameBalance(tgUserId)
+    return { ok: true, user: result }
   } catch (error) {
     console.error("Get balance error:", error)
     return { ok: false, error: "Failed to get balance" }
@@ -92,67 +148,8 @@ export const getBalance = async (tgUserId: string) => {
 
 export const placeBet = async (tgUserId: string, choice: "S" | "R" | "G", amount: number) => {
   try {
-    const supabase = createClient()
-
-    // Get user
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("tg_user_id", tgUserId)
-      .single()
-
-    if (userError || !user) {
-      return { ok: false, error: "User not found" }
-    }
-
-    if (user.balance < amount) {
-      return { ok: false, error: "Insufficient balance" }
-    }
-
-    // Generate nonce and commit hash for provably fair
-    const nonce = Date.now()
-    const serverSeed = Math.random().toString(36).substring(2, 15)
-    const commitHash = await crypto.subtle
-      .digest("SHA-256", new TextEncoder().encode(serverSeed + nonce))
-      .then((buffer) =>
-        Array.from(new Uint8Array(buffer))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(""),
-      )
-
-    // Create bet
-    const { data: bet, error: betError } = await supabase
-      .from("bets")
-      .insert({
-        user_id: user.id,
-        choice,
-        amount,
-        nonce,
-        commit_hash: commitHash,
-        server_seed: serverSeed,
-        payout: 0,
-        revealed: false,
-      })
-      .select()
-      .single()
-
-    if (betError) {
-      console.error("Error creating bet:", betError)
-      return { ok: false, error: betError.message }
-    }
-
-    // Update user balance
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ balance: user.balance - amount })
-      .eq("id", user.id)
-
-    if (updateError) {
-      console.error("Error updating balance:", updateError)
-      return { ok: false, error: updateError.message }
-    }
-
-    return { ok: true, bet, commit_hash: commitHash }
+    const result = await gameBet(tgUserId, { choice: choice as "S" | "F", amount })
+    return { ok: true, bet: result, commit_hash: result.commit_hash }
   } catch (error) {
     console.error("Place bet error:", error)
     return { ok: false, error: "Failed to place bet" }
@@ -161,76 +158,8 @@ export const placeBet = async (tgUserId: string, choice: "S" | "R" | "G", amount
 
 export const revealBet = async (tgUserId: string, betId: string) => {
   try {
-    const supabase = createClient()
-
-    // Get bet and user
-    const { data: bet, error: betError } = await supabase.from("bets").select("*, users(*)").eq("id", betId).single()
-
-    if (betError || !bet) {
-      return { ok: false, error: "Bet not found" }
-    }
-
-    if (bet.revealed) {
-      return { ok: false, error: "Bet already revealed" }
-    }
-
-    // Generate race result using server seed and nonce
-    const hash = await crypto.subtle
-      .digest("SHA-256", new TextEncoder().encode(bet.server_seed + bet.nonce))
-      .then((buffer) =>
-        Array.from(new Uint8Array(buffer))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(""),
-      )
-
-    // Use first 8 characters of hash to determine winner
-    const hashValue = Number.parseInt(hash.substring(0, 8), 16)
-    const winners = ["S", "R", "G"]
-    const winner = winners[hashValue % 3] as "S" | "R" | "G"
-
-    const isWin = bet.choice === winner
-    const payout = isWin ? bet.amount * 2.5 : 0
-
-    // Update bet
-    const { error: updateBetError } = await supabase
-      .from("bets")
-      .update({
-        winner,
-        payout,
-        revealed: true,
-        resolved_at: new Date().toISOString(),
-      })
-      .eq("id", betId)
-
-    if (updateBetError) {
-      console.error("Error updating bet:", updateBetError)
-      return { ok: false, error: updateBetError.message }
-    }
-
-    // Update user balance and snail_accumulated
-    const newBalance = bet.users.balance + payout
-    const newSnailAccumulated = bet.users.snail_accumulated + bet.amount
-
-    const { error: updateUserError } = await supabase
-      .from("users")
-      .update({
-        balance: newBalance,
-        snail_accumulated: newSnailAccumulated,
-      })
-      .eq("id", bet.user_id)
-
-    if (updateUserError) {
-      console.error("Error updating user:", updateUserError)
-      return { ok: false, error: updateUserError.message }
-    }
-
-    return {
-      ok: true,
-      winner,
-      payout,
-      server_seed: bet.server_seed,
-      is_win: isWin,
-    }
+    const result = await gameReveal(tgUserId, { bet_id: betId })
+    return { ok: true, ...result }
   } catch (error) {
     console.error("Reveal bet error:", error)
     return { ok: false, error: "Failed to reveal bet" }
@@ -409,15 +338,10 @@ function generateRaceProgression(winner: "S" | "R" | "G", serverSeed: string, no
 // Legacy API object for backward compatibility
 export const api = {
   init: (p: { tg_user_id: string; username?: string }) => initUser(p.tg_user_id, p.username || ""),
-
   balance: (tgUserId: string) => getBalance(tgUserId),
-
   bet: (tgUserId: string, choice: "S" | "R" | "G", amount: number) => placeBet(tgUserId, choice, amount),
-
   reveal: (tgUserId: string, bet_id: string) => revealBet(tgUserId, bet_id),
-
   starsWebhook: (p: { tg_user_id: string; stars_amount: number; tg_payment_id: string }) =>
     purchaseStars(p.tg_user_id, p.stars_amount, p.tg_payment_id),
-
   raceProgression: (betId: string) => getRaceProgression(betId),
 }

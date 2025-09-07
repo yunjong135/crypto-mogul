@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { fetchPortfolio, fetchHistory } from "@/lib/api"
 
 interface Position {
   symbol: string
@@ -41,7 +42,7 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
   const { toast } = useToast()
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const fetchPortfolio = async () => {
+  const fetchPortfolioData = async () => {
     if (!tgUserId) {
       setLoading(false)
       return
@@ -57,43 +58,7 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
       setLoading(true)
       setError(null)
 
-      const response = await fetch("https://api.snail-race.com/portfolio", {
-        headers: {
-          "x-tg-user-id": `u-${tgUserId}`,
-        },
-        signal: abortControllerRef.current.signal,
-        cache: "no-store",
-      })
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          toast({
-            title: "Login Required",
-            description: "Missing x-tg-user-id",
-            variant: "destructive",
-          })
-          return
-        }
-
-        if (response.status === 404) {
-          // User not found, prompt signup
-          toast({
-            title: "Account Setup Required",
-            description: "Please initialize your account first",
-            variant: "destructive",
-          })
-          // Call POST /api/init here if needed
-          return
-        }
-
-        if (response.status === 500) {
-          throw new Error("Server error")
-        }
-
-        throw new Error("Failed to fetch portfolio")
-      }
-
-      const data: PortfolioData = await response.json()
+      const data: PortfolioData = await fetchPortfolio(tgUserId.toString())
       setPortfolioData(data)
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -102,11 +67,26 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
 
       console.error("Error fetching portfolio:", err)
       setError("Failed to load portfolio")
-      toast({
-        title: "Error",
-        description: "Failed to load portfolio data. Please try again.",
-        variant: "destructive",
-      })
+
+      if (err.message.includes("400")) {
+        toast({
+          title: "Login Required",
+          description: "Missing x-tg-user-id",
+          variant: "destructive",
+        })
+      } else if (err.message.includes("404")) {
+        toast({
+          title: "Account Setup Required",
+          description: "Please initialize your account first",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load portfolio data. Please try again.",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -115,14 +95,7 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
   const fetchStockHistory = async (symbol: string) => {
     setLoadingHistory(true)
     try {
-      const response = await fetch(
-        `https://api.snail-race.com/stocks/history?symbol=${symbol}&minutes=4320&limit=1000`,
-        { cache: "no-store" },
-      )
-      if (!response.ok) {
-        throw new Error("Failed to fetch stock history")
-      }
-      const data = await response.json()
+      const data = await fetchHistory(symbol, { minutes: 4320, limit: 1000 })
       setStockHistory(data)
     } catch (err) {
       console.error("Error fetching stock history:", err)
@@ -137,10 +110,10 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
   }
 
   useEffect(() => {
-    fetchPortfolio()
+    fetchPortfolioData()
 
     const interval = setInterval(() => {
-      fetchPortfolio()
+      fetchPortfolioData()
     }, 10000) // Refresh every 10 seconds
 
     return () => {
@@ -174,7 +147,7 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
         <h3 className="text-lg font-bold text-white mb-4">Portfolio</h3>
         <div className="text-center py-8 text-gray-400">
           <p>Failed to load portfolio</p>
-          <Button onClick={fetchPortfolio} variant="outline" size="sm" className="mt-2 bg-transparent">
+          <Button onClick={fetchPortfolioData} variant="outline" size="sm" className="mt-2 bg-transparent">
             Retry
           </Button>
         </div>
@@ -211,7 +184,7 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
       <Card className="p-4 bg-gray-800 border-gray-700">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-white">Portfolio</h3>
-          <Button onClick={fetchPortfolio} variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+          <Button onClick={fetchPortfolioData} variant="ghost" size="sm" className="text-gray-400 hover:text-white">
             🔄
           </Button>
         </div>
