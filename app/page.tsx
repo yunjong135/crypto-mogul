@@ -13,6 +13,7 @@ import { TicketsPanel } from "@/components/TicketsPanel"
 import { Leaderboard } from "@/components/Leaderboard"
 import { PurchaseStars } from "@/components/PurchaseStars"
 import { useToast } from "@/hooks/use-toast"
+import { ClientOnly } from "@/components/ClientOnly"
 
 type Tab = "Racing" | "Stocks" | "Tickets" | "Leaderboard" | "Wallet"
 
@@ -21,8 +22,13 @@ export default function SnailRacingGame() {
   const [betData, setBetData] = useState<any>(null)
   const [isRacing, setIsRacing] = useState(false)
   const [backendStatus, setBackendStatus] = useState<"online" | "offline" | "checking">("offline")
+  const [isClient, setIsClient] = useState(false)
   const { tgUserId, balance, refreshBalance, loading } = useSnailUser()
   const { toast } = useToast()
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const checkBackendHealth = async () => {
     try {
@@ -72,6 +78,17 @@ export default function SnailRacingGame() {
     refreshBalance()
   }
 
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900 flex items-center justify-center">
@@ -84,8 +101,16 @@ export default function SnailRacingGame() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900">
-      <div className="max-w-4xl mx-auto">
+    <ClientOnly fallback={
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading...</p>
+        </div>
+      </div>
+    }>
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900">
+        <div className="max-w-4xl mx-auto">
         {/* Header */}
         <HeaderBar tgUserId={tgUserId} />
 
@@ -188,7 +213,8 @@ export default function SnailRacingGame() {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </ClientOnly>
   )
 }

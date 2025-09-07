@@ -39,8 +39,13 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
   const [selectedStock, setSelectedStock] = useState<string | null>(null)
   const [stockHistory, setStockHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const { toast } = useToast()
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const fetchPortfolioData = async () => {
     if (!tgUserId) {
@@ -127,6 +132,18 @@ export function PortfolioPanel({ tgUserId }: PortfolioPanelProps) {
   const handlePositionClick = (symbol: string) => {
     setSelectedStock(symbol)
     fetchStockHistory(symbol)
+  }
+
+  if (!isClient) {
+    return (
+      <Card className="p-4 bg-gray-800 border-gray-700">
+        <h3 className="text-lg font-bold text-white mb-4">Portfolio</h3>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+          <span className="ml-2 text-gray-400">Loading...</span>
+        </div>
+      </Card>
+    )
   }
 
   if (loading) {
