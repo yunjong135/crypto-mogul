@@ -213,6 +213,7 @@ export default function SnailRacingGame() {
             </div>
           )}
         </div>
+        </div>
       </div>
     </ClientOnly>
   )
