@@ -12,6 +12,7 @@ import { PortfolioPanel } from "@/components/PortfolioPanel"
 import { TicketsPanel } from "@/components/TicketsPanel"
 import { Leaderboard } from "@/components/Leaderboard"
 import { PurchaseStars } from "@/components/PurchaseStars"
+import { useToast } from "@/hooks/use-toast"
 
 type Tab = "Racing" | "Stocks" | "Tickets" | "Leaderboard" | "Wallet"
 
@@ -19,10 +20,41 @@ export default function SnailRacingGame() {
   const [activeTab, setActiveTab] = useState<Tab>("Racing")
   const [betData, setBetData] = useState<any>(null)
   const [isRacing, setIsRacing] = useState(false)
+  const [backendStatus, setBackendStatus] = useState<"online" | "offline" | "checking">("checking")
   const { tgUserId, balance, refreshBalance, loading } = useSnailUser()
+  const { toast } = useToast()
+
+  const checkBackendHealth = async () => {
+    try {
+      const response = await fetch("https://api.snail-race.com/api/health")
+      const data = await response.json()
+
+      if (data.ok === true) {
+        setBackendStatus("online")
+      } else {
+        setBackendStatus("offline")
+        toast({
+          title: "Backend Offline",
+          description: "The backend service is currently unavailable.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      setBackendStatus("offline")
+      toast({
+        title: "Backend Offline",
+        description: "Unable to connect to the backend service.",
+        variant: "destructive",
+      })
+    }
+  }
 
   useEffect(() => {
     initTG()
+    checkBackendHealth()
+
+    const healthInterval = setInterval(checkBackendHealth, 30000)
+    return () => clearInterval(healthInterval)
   }, [])
 
   const handleBetPlaced = (data: { betId: string; commit_hash: string; reveal_after_ms: number }) => {
@@ -56,19 +88,38 @@ export default function SnailRacingGame() {
         {/* Header */}
         <HeaderBar tgUserId={tgUserId} />
 
+        {/* Backend Status Banner */}
+        {backendStatus === "offline" && (
+          <div className="bg-red-600 text-white px-4 py-2 text-center text-sm">
+            ⚠️ Backend Offline - Some features may not work properly
+          </div>
+        )}
+
         {/* Tab Navigation */}
         <div className="flex bg-gray-800 border-b border-gray-700">
           {(["Racing", "Stocks", "Tickets", "Leaderboard", "Wallet"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
                 activeTab === tab
                   ? "bg-blue-600 text-white border-b-2 border-blue-400"
                   : "text-gray-300 hover:text-white hover:bg-gray-700"
               }`}
             >
               {tab}
+              {/* Status Indicator on Stocks Tab */}
+              {tab === "Stocks" && (
+                <div
+                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+                    backendStatus === "online"
+                      ? "bg-green-400"
+                      : backendStatus === "offline"
+                        ? "bg-red-400"
+                        : "bg-yellow-400"
+                  }`}
+                />
+              )}
             </button>
           ))}
         </div>
@@ -107,9 +158,10 @@ export default function SnailRacingGame() {
           )}
 
           {activeTab === "Stocks" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <StocksList tgUserId={tgUserId} onTradeComplete={handleTradeComplete} />
+            <div className="space-y-4">
               <PortfolioPanel tgUserId={tgUserId} />
+
+              <StocksList tgUserId={tgUserId} onTradeComplete={handleTradeComplete} />
             </div>
           )}
 
