@@ -4,3 +4,7 @@ import { passthrough } from "../../_utils"
 export async function POST(req: Request) {
   return passthrough(req, "/trade/buy")
 }
+
+export async function OPTIONS(req: Request) {
+  return passthrough(req, "/trade/buy")
+}

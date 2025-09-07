@@ -5,30 +5,31 @@ import { revealBet, getRaceProgression } from "@/lib/api"
 import { getTelegramUser } from "@/lib/telegram"
 
 interface RaceAnimationProps {
-  isRacing: boolean
-  betData: any
-  result: any
-  onRaceComplete: (result: any) => void
+  tgUserId: number | null
+  betId: string
+  commit: string
+  revealMs: number
+  onRevealed: (result: any) => void
 }
 
 const RACE_DURATION_MS = 10000
 
-function RaceAnimation({ isRacing, betData, result, onRaceComplete }: RaceAnimationProps) {
+function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAnimationProps) {
   const [countdown, setCountdown] = useState(RACE_DURATION_MS / 1000)
   const [isRevealing, setIsRevealing] = useState(false)
   const [raceProgression, setRaceProgression] = useState<any>(null)
   const [currentFrame, setCurrentFrame] = useState(0)
 
   useEffect(() => {
-    if (!isRacing || !betData) return
+    if (!tgUserId || !betId) return
 
-    console.log("[v0] Race starting, fetching progression for bet:", betData.bet_id)
+    console.log("[v0] Race starting, fetching progression for bet:", betId)
     setCountdown(RACE_DURATION_MS / 1000)
     setCurrentFrame(0)
 
     const fetchProgression = async () => {
       try {
-        const progressionResponse = await getRaceProgression(betData.bet_id)
+        const progressionResponse = await getRaceProgression(betId)
         console.log("[v0] Race progression response:", progressionResponse)
         if (progressionResponse.ok) {
           setRaceProgression(progressionResponse.progression)
@@ -62,25 +63,24 @@ function RaceAnimation({ isRacing, betData, result, onRaceComplete }: RaceAnimat
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isRacing, betData])
+  }, [tgUserId, betId])
 
   const handleReveal = async () => {
-    if (!betData) {
-      console.error("[v0] No bet data for reveal")
+    if (!tgUserId || !betId) {
+      console.error("[v0] No user ID or bet ID for reveal")
       return
     }
 
-    console.log("[v0] Starting reveal for bet:", betData.bet_id)
+    console.log("[v0] Starting reveal for bet:", betId)
     setIsRevealing(true)
 
     try {
-      const telegramUser = getTelegramUser()
-      const response = await revealBet(telegramUser.id, betData.bet_id)
+      const response = await revealBet(tgUserId.toString(), betId)
       console.log("[v0] Reveal response:", response)
 
       if (response.ok) {
-        console.log("[v0] Race complete, calling onRaceComplete")
-        onRaceComplete(response.result)
+        console.log("[v0] Race complete, calling onRevealed")
+        onRevealed(response.result)
       } else {
         console.error("[v0] Reveal failed:", response)
       }
