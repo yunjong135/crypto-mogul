@@ -100,7 +100,7 @@ export async function gameBalance(tgUserId: string) {
   return r.json()
 }
 
-export async function gameBet(tgUserId: string, body: { choice: "S" | "F"; amount: number }) {
+export async function gameBet(tgUserId: string, body: { choice: "S" | "R" | "G"; amount: number }) {
   const r = await fetch(`${BASE}/game/bet`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-tg-user-id": tgUserId },
@@ -148,7 +148,7 @@ export const getBalance = async (tgUserId: string) => {
 
 export const placeBet = async (tgUserId: string, choice: "S" | "R" | "G", amount: number) => {
   try {
-    const result = await gameBet(tgUserId, { choice: choice as "S" | "F", amount })
+    const result = await gameBet(tgUserId, { choice, amount })
     return { ok: true, bet: result, commit_hash: result.commit_hash }
   } catch (error) {
     console.error("Place bet error:", error)
