@@ -5,8 +5,10 @@ import { placeBet } from "@/lib/api"
 import { getTelegramUser } from "@/lib/telegram"
 
 interface BetPanelProps {
+  tgUserId: number | null
   balance: number
-  onBetStart: (betData: any) => void
+  onBetPlaced: (betData: any) => void
+  onBalanceUpdate: () => void
 }
 
 const SNAILS = [
@@ -15,7 +17,7 @@ const SNAILS = [
   { id: "G", name: "Glider", color: "bg-green-500", emoji: "🟢" },
 ]
 
-export function BetPanel({ balance, onBetStart }: BetPanelProps) {
+export function BetPanel({ tgUserId, balance, onBetPlaced, onBalanceUpdate }: BetPanelProps) {
   const [betAmount, setBetAmount] = useState("")
   const [isPlacingBet, setIsPlacingBet] = useState(false)
 
@@ -32,21 +34,26 @@ export function BetPanel({ balance, onBetStart }: BetPanelProps) {
       return
     }
 
+    if (!tgUserId) {
+      alert("Please connect your Telegram account")
+      return
+    }
+
     setIsPlacingBet(true)
 
     try {
-      const telegramUser = getTelegramUser()
-      const response = await placeBet(telegramUser.id, choice, amount)
+      const response = await placeBet(tgUserId.toString(), choice as "S" | "R" | "G", amount)
 
       if (response.ok) {
-        onBetStart({
-          bet_id: response.bet.id,
+        onBetPlaced({
+          betId: response.bet.id,
           commit_hash: response.commit_hash,
           choice,
           amount,
           reveal_after_ms: 10000, // 10 seconds for the race
         })
         setBetAmount("")
+        onBalanceUpdate() // Update balance after placing bet
       } else {
         alert("Failed to place bet. Please try again.")
       }

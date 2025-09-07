@@ -20,13 +20,14 @@ export default function SnailRacingGame() {
   const [activeTab, setActiveTab] = useState<Tab>("Racing")
   const [betData, setBetData] = useState<any>(null)
   const [isRacing, setIsRacing] = useState(false)
-  const [backendStatus, setBackendStatus] = useState<"online" | "offline" | "checking">("checking")
+  const [backendStatus, setBackendStatus] = useState<"online" | "offline" | "checking">("offline")
   const { tgUserId, balance, refreshBalance, loading } = useSnailUser()
   const { toast } = useToast()
 
   const checkBackendHealth = async () => {
     try {
-      const response = await fetch("https://api.snail-race.com/api/health")
+      // Use the internal API route instead of direct external call
+      const response = await fetch("/api/snail/game/health")
       const data = await response.json()
 
       if (data.ok === true) {

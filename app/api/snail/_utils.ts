@@ -2,6 +2,19 @@ export const runtime = "nodejs" as const
 export const dynamic = "force-dynamic" as const
 
 export async function passthrough(req: Request, path: string) {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, x-tg-user-id, Authorization",
+        "Access-Control-Max-Age": "86400",
+      },
+    })
+  }
+
   const API = process.env.NEXT_PUBLIC_API_BASE ?? "https://api.snail-race.com"
 
   const inHeaders = new Headers(req.headers)
@@ -30,6 +43,11 @@ export async function passthrough(req: Request, path: string) {
 
   return new Response(buf, {
     status: r.status,
-    headers: { "content-type": r.headers.get("content-type") ?? "application/json" },
+    headers: { 
+      "content-type": r.headers.get("content-type") ?? "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, x-tg-user-id, Authorization",
+    },
   })
 }
