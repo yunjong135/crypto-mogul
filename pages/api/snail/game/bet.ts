@@ -22,7 +22,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         amount: 100,
         commit_hash: 'mock-commit-hash'
       },
-      commit_hash: 'mock-commit-hash'
+      commit_hash: 'mock-commit-hash',
+      choice: 'S',
+      amount: 100
     });
   } else {
     res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);

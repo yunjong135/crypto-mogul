@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { placeBet } from "@/lib/api"
 import { getTelegramUser } from "@/lib/telegram"
 
@@ -20,6 +20,11 @@ const SNAILS = [
 export function BetPanel({ tgUserId, balance, onBetPlaced, onBalanceUpdate }: BetPanelProps) {
   const [betAmount, setBetAmount] = useState("")
   const [isPlacingBet, setIsPlacingBet] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const handleBet = async (choice: string) => {
     const amount = Number.parseInt(betAmount)
@@ -63,6 +68,17 @@ export function BetPanel({ tgUserId, balance, onBetPlaced, onBalanceUpdate }: Be
     } finally {
       setIsPlacingBet(false)
     }
+  }
+
+  if (!isClient) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

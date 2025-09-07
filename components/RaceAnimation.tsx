@@ -19,6 +19,12 @@ function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAn
   const [isRevealing, setIsRevealing] = useState(false)
   const [raceProgression, setRaceProgression] = useState<any>(null)
   const [currentFrame, setCurrentFrame] = useState(0)
+  const [result, setResult] = useState<any>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     if (!tgUserId || !betId) return
@@ -80,7 +86,8 @@ function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAn
 
       if (response.ok) {
         console.log("[v0] Race complete, calling onRevealed")
-        onRevealed(response.result)
+        setResult(response)
+        onRevealed(response)
       } else {
         console.error("[v0] Reveal failed:", response)
       }
@@ -119,6 +126,17 @@ function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAn
       default:
         return "/images/snail-s.png"
     }
+  }
+
+  if (!isClient) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   if (result) {

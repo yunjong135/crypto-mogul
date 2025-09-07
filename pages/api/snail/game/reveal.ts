@@ -7,8 +7,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(200).json({
       ok: true,
       winner: 'S',
+      choice: 'S',
+      amount: 100,
       payout: 250,
-      revealed: true
+      revealed: true,
+      server_seed: 'mock-server-seed-' + Date.now(),
+      nonce: Math.floor(Math.random() * 1000000)
     });
   } else {
     res.setHeader('Allow', ['GET', 'POST']);
