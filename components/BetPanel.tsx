@@ -15,7 +15,7 @@ const SNAILS = [
   { id: "G", name: "Glider", color: "bg-green-500", emoji: "🟢" },
 ]
 
-export default function BetPanel({ balance, onBetStart }: BetPanelProps) {
+export function BetPanel({ balance, onBetStart }: BetPanelProps) {
   const [betAmount, setBetAmount] = useState("")
   const [isPlacingBet, setIsPlacingBet] = useState(false)
 

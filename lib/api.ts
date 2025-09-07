@@ -34,7 +34,6 @@ interface Purchase {
 }
 
 export const initUser = async (tgUserId: string, username: string) => {
-  const startTime = Date.now()
   try {
     const supabase = createClient()
 
@@ -55,7 +54,7 @@ export const initUser = async (tgUserId: string, username: string) => {
       .insert({
         tg_user_id: tgUserId,
         username: username || `User${tgUserId.slice(-4)}`,
-        balance: 10000, // Starting balance (matches schema default)
+        balance: 1000, // Starting balance
         snail_accumulated: 0,
       })
       .select()
@@ -66,15 +65,9 @@ export const initUser = async (tgUserId: string, username: string) => {
       return { ok: false, error: insertError.message }
     }
 
-    const responseTime = Date.now() - startTime
-    if (responseTime > 300) {
-      console.warn(`Slow initUser query: ${responseTime}ms for user ${tgUserId}`)
-    }
-
     return { ok: true, user: newUser }
   } catch (error) {
-    const responseTime = Date.now() - startTime
-    console.error(`Init user error (${responseTime}ms):`, error)
+    console.error("Init user error:", error)
     return { ok: false, error: "Failed to initialize user" }
   }
 }
@@ -98,7 +91,6 @@ export const getBalance = async (tgUserId: string) => {
 }
 
 export const placeBet = async (tgUserId: string, choice: "S" | "R" | "G", amount: number) => {
-  const startTime = Date.now()
   try {
     const supabase = createClient()
 
@@ -160,15 +152,9 @@ export const placeBet = async (tgUserId: string, choice: "S" | "R" | "G", amount
       return { ok: false, error: updateError.message }
     }
 
-    const responseTime = Date.now() - startTime
-    if (responseTime > 300) {
-      console.warn(`Slow placeBet query: ${responseTime}ms for user ${tgUserId}`)
-    }
-
     return { ok: true, bet, commit_hash: commitHash }
   } catch (error) {
-    const responseTime = Date.now() - startTime
-    console.error(`Place bet error (${responseTime}ms):`, error)
+    console.error("Place bet error:", error)
     return { ok: false, error: "Failed to place bet" }
   }
 }

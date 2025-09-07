@@ -13,7 +13,7 @@ interface RaceAnimationProps {
 
 const RACE_DURATION_MS = 10000
 
-export default function RaceAnimation({ isRacing, betData, result, onRaceComplete }: RaceAnimationProps) {
+function RaceAnimation({ isRacing, betData, result, onRaceComplete }: RaceAnimationProps) {
   const [countdown, setCountdown] = useState(RACE_DURATION_MS / 1000)
   const [isRevealing, setIsRevealing] = useState(false)
   const [raceProgression, setRaceProgression] = useState<any>(null)
@@ -218,3 +218,5 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
     </div>
   )
 }
+
+export { RaceAnimation }
