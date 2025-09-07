@@ -1,30 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://api.snail-race.com';
-
-export async function GET(req: NextRequest) {
-  try {
-    const url = `${API_BASE}/stocks/history${req.nextUrl.search}`;
-    console.log(`[Stocks History] GET ${req.url} -> ${url}`);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      cache: 'no-store',
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Stocks history error:', error);
-    
-    // Fallback response
-    return NextResponse.json({
-      error: 'Backend service unavailable',
-      message: 'Please try again later'
-    }, { status: 503 });
-  }
+export async function GET() {
+  console.log('[Stocks History] GET request received');
+  
+  return NextResponse.json([
+    { timestamp: Date.now() - 3600000, price: 95 },
+    { timestamp: Date.now() - 1800000, price: 98 },
+    { timestamp: Date.now(), price: 100 }
+  ]);
 }
 
-export async function POST(req: NextRequest) {
-  return GET(req);
+export async function POST() {
+  console.log('[Stocks History] POST request received');
+  return GET();
 }

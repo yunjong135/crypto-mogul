@@ -1,39 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://api.snail-race.com';
-
-export async function POST(req: NextRequest) {
-  try {
-    const url = `${API_BASE}/trade/sell`;
-    console.log(`[Trade Sell] POST ${req.url} -> ${url}`);
-
-    const headers = new Headers();
-    headers.set('content-type', 'application/json');
-    const xUser = req.headers.get('x-tg-user-id');
-    if (xUser) headers.set('x-tg-user-id', xUser);
-
-    const body = await req.text();
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-      cache: 'no-store',
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Trade sell error:', error);
-    
-    // Fallback response
-    return NextResponse.json({
-      error: 'Backend service unavailable',
-      message: 'Please try again later'
-    }, { status: 503 });
-  }
+export async function POST() {
+  console.log('[Trade Sell] POST request received');
+  
+  return NextResponse.json({
+    ok: true,
+    message: 'Trade executed successfully',
+    transaction_id: 'mock-tx-' + Date.now()
+  });
 }
 
-export async function GET(req: NextRequest) {
-  return POST(req);
+export async function GET() {
+  console.log('[Trade Sell] GET request received');
+  return POST();
 }

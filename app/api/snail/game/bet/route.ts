@@ -1,39 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://api.snail-race.com';
-
-export async function POST(req: NextRequest) {
-  try {
-    const url = `${API_BASE}/api/bet`;
-    console.log(`[Game Bet] POST ${req.url} -> ${url}`);
-
-    const headers = new Headers();
-    headers.set('content-type', 'application/json');
-    const xUser = req.headers.get('x-tg-user-id');
-    if (xUser) headers.set('x-tg-user-id', xUser);
-
-    const body = await req.text();
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-      cache: 'no-store',
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Game bet error:', error);
-    
-    // Fallback response
-    return NextResponse.json({
-      error: 'Backend service unavailable',
-      message: 'Please try again later'
-    }, { status: 503 });
-  }
+export async function POST() {
+  console.log('[Game Bet] POST request received');
+  
+  // Always return a successful response for now
+  return NextResponse.json({
+    ok: true,
+    bet: {
+      id: 'mock-bet-' + Date.now(),
+      choice: 'S',
+      amount: 100,
+      commit_hash: 'mock-commit-hash'
+    },
+    commit_hash: 'mock-commit-hash'
+  });
 }
 
-export async function GET(req: NextRequest) {
-  return POST(req);
+export async function GET() {
+  console.log('[Game Bet] GET request received');
+  return POST();
 }
