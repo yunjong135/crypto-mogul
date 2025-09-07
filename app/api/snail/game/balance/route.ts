@@ -4,8 +4,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://api.snail-race.com
 
 export async function GET(req: NextRequest) {
   try {
-    const url = `${API_BASE}/portfolio${req.nextUrl.search}`;
-    console.log(`[Portfolio] GET ${req.url} -> ${url}`);
+    const url = `${API_BASE}/api/balance`;
+    console.log(`[Game Balance] GET ${req.url} -> ${url}`);
 
     const headers = new Headers();
     const xUser = req.headers.get('x-tg-user-id');
@@ -20,18 +20,13 @@ export async function GET(req: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Portfolio error:', error);
+    console.error('Game balance error:', error);
     
     // Fallback response
     return NextResponse.json({
-      ok: true,
-      cash: 1000,
-      portfolio_value: 0,
-      cost_basis: 0,
-      pnl: 0,
-      pnl_rate: 0,
-      positions: []
-    }, { status: 200 });
+      error: 'Backend service unavailable',
+      message: 'Please try again later'
+    }, { status: 503 });
   }
 }
 
