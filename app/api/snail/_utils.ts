@@ -1,5 +1,5 @@
-export const runtime = "nodejs"
-export const dynamic = "force-dynamic"
+export const runtime = "nodejs" as const
+export const dynamic = "force-dynamic" as const
 
 export async function passthrough(req: Request, path: string) {
   const API = process.env.NEXT_PUBLIC_API_BASE ?? "https://api.snail-race.com"
