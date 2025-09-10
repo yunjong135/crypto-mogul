@@ -54,7 +54,10 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
         if (newCountdown <= 0) {
           console.log("[v0] Race finished, revealing results")
           clearInterval(timer)
-          handleReveal()
+          // Use setTimeout to avoid calling async function in state setter
+          setTimeout(() => {
+            handleReveal()
+          }, 0)
           return 0
         }
         return newCountdown
@@ -183,7 +186,18 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
                 <span>🏁</span>
               </div>
               <div className="h-12 bg-gray-100 rounded-full relative overflow-hidden">
-                <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-green-200 to-green-100"></div>
+                <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-green-300 via-green-200 to-green-300" 
+                     style={{
+                       backgroundImage: `
+                         linear-gradient(45deg, rgba(34, 197, 94, 0.1) 25%, transparent 25%),
+                         linear-gradient(-45deg, rgba(34, 197, 94, 0.1) 25%, transparent 25%),
+                         linear-gradient(45deg, transparent 75%, rgba(34, 197, 94, 0.1) 75%),
+                         linear-gradient(-45deg, transparent 75%, rgba(34, 197, 94, 0.1) 75%)
+                       `,
+                       backgroundSize: '20px 20px',
+                       backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                     }}>
+                </div>
                 <div
                   className="absolute top-1 h-10 w-10 transition-all duration-1000 ease-linear"
                   style={{
