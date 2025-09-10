@@ -21,38 +21,7 @@ export default function SnailRacingGame() {
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  // ✅ Datadog RUM: 클라이언트에서만, useEffect로 동적 import
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const { datadogRum } = await import("@datadog/browser-rum")
-        if (!mounted) return
-        datadogRum.init({
-          applicationId: "5bcd84f3-57b4-4631-95b6-74886aec2d0b",
-          clientToken: "pubaa8a85778918a27ed17bcd1c9737ea8c",
-          site: "datadoghq.com",
-          service: "ddd",
-          env: "prod", // ← 실제 환경명으로 변경
-          sessionSampleRate: 100,
-          sessionReplaySampleRate: 100,
-          trackBfcacheViews: true,
-          defaultPrivacyLevel: "mask-user-input",
-        })
-        datadogRum.startSessionReplayRecording?.()
-      } catch (e) {
-        console.warn("Datadog RUM init skipped:", e)
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  useEffect(() => {
-    initializeApp()
-  }, [])
-
+ 
   const initializeApp = async () => {
     try {
       const telegramUser = getTelegramUser() // 반드시 클라에서만 호출됨(useEffect 내부)
