@@ -21,7 +21,10 @@ export default function SnailRacingGame() {
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [loading, setLoading] = useState(true)
 
- 
+  useEffect(() => {
+    initializeApp()
+  }, [])
+
   const initializeApp = async () => {
     try {
       const telegramUser = getTelegramUser() // 반드시 클라에서만 호출됨(useEffect 내부)

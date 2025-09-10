@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 
 interface GameResult {
   winner: string
@@ -20,6 +20,7 @@ export default function RecentResults() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const supabase = createClient()
     fetchRecentResults()
 
     // Subscribe to realtime updates for new bets
@@ -37,6 +38,7 @@ export default function RecentResults() {
 
   const fetchRecentResults = async () => {
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from("bets")
         .select("winner, resolved_at")
