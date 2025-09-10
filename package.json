@@ -9,28 +9,19 @@
     "start": "next start"
   },
   "dependencies": {
-    "@radix-ui/react-dialog": "latest",
-    "@radix-ui/react-slot": "latest",
-    "@radix-ui/react-toast": "latest",
-    "@remix-run/react": "latest",
+    "@datadog/browser-logs": "latest",
+    "@datadog/browser-rum": "latest",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
-    "@sveltejs/kit": "latest",
-    "@vercel/analytics": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "geist": "latest",
+    "crypto": "latest",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
-    "next-themes": "latest",
     "react": "^18",
     "react-dom": "^18",
-    "recharts": "latest",
-    "svelte": "latest",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7",
-    "vue": "latest",
-    "vue-router": "latest"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^22",

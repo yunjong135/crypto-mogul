@@ -43,7 +43,7 @@ export default function RecentResults() {
         .not("winner", "is", null)
         .not("resolved_at", "is", null)
         .order("resolved_at", { ascending: false })
-        .limit(20)
+        .limit(50)
 
       if (error) {
         console.error("Recent results fetch error:", error)

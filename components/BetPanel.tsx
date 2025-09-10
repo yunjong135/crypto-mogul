@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { placeBet } from "@/lib/api"
 import { getTelegramUser } from "@/lib/telegram"
 
 interface BetPanelProps {
-  tgUserId: number | null
   balance: number
-  onBetPlaced: (betData: any) => void
-  onBalanceUpdate: () => void
+  onBetStart: (betData: any) => void
 }
 
 const SNAILS = [
@@ -17,14 +15,9 @@ const SNAILS = [
   { id: "G", name: "Glider", color: "bg-green-500", emoji: "🟢" },
 ]
 
-export function BetPanel({ tgUserId, balance, onBetPlaced, onBalanceUpdate }: BetPanelProps) {
+export default function BetPanel({ balance, onBetStart }: BetPanelProps) {
   const [betAmount, setBetAmount] = useState("")
   const [isPlacingBet, setIsPlacingBet] = useState(false)
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   const handleBet = async (choice: string) => {
     const amount = Number.parseInt(betAmount)
@@ -39,26 +32,21 @@ export function BetPanel({ tgUserId, balance, onBetPlaced, onBalanceUpdate }: Be
       return
     }
 
-    if (!tgUserId) {
-      alert("Please connect your Telegram account")
-      return
-    }
-
     setIsPlacingBet(true)
 
     try {
-      const response = await placeBet(tgUserId.toString(), choice as "S" | "R" | "G", amount)
+      const telegramUser = getTelegramUser()
+      const response = await placeBet(telegramUser.id, choice, amount)
 
       if (response.ok) {
-        onBetPlaced({
-          betId: response.bet.id,
+        onBetStart({
+          bet_id: response.bet.id,
           commit_hash: response.commit_hash,
           choice,
           amount,
           reveal_after_ms: 10000, // 10 seconds for the race
         })
         setBetAmount("")
-        onBalanceUpdate() // Update balance after placing bet
       } else {
         alert("Failed to place bet. Please try again.")
       }
@@ -68,17 +56,6 @@ export function BetPanel({ tgUserId, balance, onBetPlaced, onBalanceUpdate }: Be
     } finally {
       setIsPlacingBet(false)
     }
-  }
-
-  if (!isClient) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
   }
 
   return (

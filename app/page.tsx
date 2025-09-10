@@ -1,92 +1,98 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { initTG } from "@/lib/tg"
-import { useSnailUser } from "@/hooks/useSnailUser"
-import { HeaderBar } from "@/components/HeaderBar"
-import { StocksTickerMarquee } from "@/components/StocksTickerMarquee"
-import { BetPanel } from "@/components/BetPanel"
-import { RaceAnimation } from "@/components/RaceAnimation"
-import { StocksList } from "@/components/StocksList"
-import { PortfolioPanel } from "@/components/PortfolioPanel"
-import { TicketsPanel } from "@/components/TicketsPanel"
-import { Leaderboard } from "@/components/Leaderboard"
-import { PurchaseStars } from "@/components/PurchaseStars"
-import { useToast } from "@/hooks/use-toast"
-import { ClientOnly } from "@/components/ClientOnly"
-
-type Tab = "Racing" | "Stocks" | "Tickets" | "Leaderboard" | "Wallet"
+import HeaderBar from "@/components/HeaderBar"
+import PurchasePanel from "@/components/PurchasePanel"
+import BetPanel from "@/components/BetPanel"
+import RaceAnimation from "@/components/RaceAnimation"
+import FairnessPanel from "@/components/FairnessPanel"
+import RecentResults from "@/components/RecentResults"
+import HowItWorksModal from "@/components/HowItWorksModal"
+import { initUser, getBalance } from "@/lib/api"
+import { getTelegramUser } from "@/lib/telegram"
 
 export default function SnailRacingGame() {
-  const [activeTab, setActiveTab] = useState<Tab>("Racing")
-  const [betData, setBetData] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
+  const [balance, setBalance] = useState(0)
+  const [snailAccumulated, setSnailAccumulated] = useState(0)
   const [isRacing, setIsRacing] = useState(false)
-  const [backendStatus, setBackendStatus] = useState<"online" | "offline" | "checking">("offline")
-  const [isClient, setIsClient] = useState(false)
-  const { tgUserId, balance, refreshBalance, loading } = useSnailUser()
-  const { toast } = useToast()
+  const [betData, setBetData] = useState<any>(null)
+  const [raceResult, setRaceResult] = useState<any>(null)
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
+  const [loading, setLoading] = useState(true)
 
+  // ✅ Datadog RUM: 클라이언트에서만, useEffect로 동적 import
   useEffect(() => {
-    setIsClient(true)
+    let mounted = true
+    ;(async () => {
+      try {
+        const { datadogRum } = await import("@datadog/browser-rum")
+        if (!mounted) return
+        datadogRum.init({
+          applicationId: "5bcd84f3-57b4-4631-95b6-74886aec2d0b",
+          clientToken: "pubaa8a85778918a27ed17bcd1c9737ea8c",
+          site: "datadoghq.com",
+          service: "ddd",
+          env: "prod", // ← 실제 환경명으로 변경
+          sessionSampleRate: 100,
+          sessionReplaySampleRate: 100,
+          trackBfcacheViews: true,
+          defaultPrivacyLevel: "mask-user-input",
+        })
+        datadogRum.startSessionReplayRecording?.()
+      } catch (e) {
+        console.warn("Datadog RUM init skipped:", e)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
   }, [])
 
-  const checkBackendHealth = async () => {
-    try {
-      // Use the internal API route instead of direct external call
-      const response = await fetch("/api/snail/game/health")
-      const data = await response.json()
+  useEffect(() => {
+    initializeApp()
+  }, [])
 
-      if (data.ok === true) {
-        setBackendStatus("online")
-      } else {
-        setBackendStatus("offline")
-        toast({
-          title: "Backend Offline",
-          description: "The backend service is currently unavailable.",
-          variant: "destructive",
-        })
+  const initializeApp = async () => {
+    try {
+      const telegramUser = getTelegramUser() // 반드시 클라에서만 호출됨(useEffect 내부)
+      // 서버에 유저 초기화
+      const initResponse = await initUser(telegramUser.id, telegramUser.username)
+      if (initResponse.ok) {
+        setUser(initResponse.user)
+        await refreshBalance()
       }
     } catch (error) {
-      setBackendStatus("offline")
-      toast({
-        title: "Backend Offline",
-        description: "Unable to connect to the backend service.",
-        variant: "destructive",
-      })
+      console.error("Failed to initialize app:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  useEffect(() => {
-    initTG()
-    checkBackendHealth()
+  const refreshBalance = async () => {
+    try {
+      const telegramUser = getTelegramUser()
+      const balanceResponse = await getBalance(telegramUser.id)
+      if (balanceResponse.ok) {
+        setBalance(balanceResponse.user.balance)
+        setSnailAccumulated(balanceResponse.user.snail_accumulated)
+      }
+    } catch (error) {
+      console.error("Failed to refresh balance:", error)
+    }
+  }
 
-    const healthInterval = setInterval(checkBackendHealth, 30000)
-    return () => clearInterval(healthInterval)
-  }, [])
-
-  const handleBetPlaced = (data: { betId: string; commit_hash: string; reveal_after_ms: number }) => {
-    setBetData(data)
+  const handleBetStart = (betData: any) => {
+    setBetData(betData)
+    setRaceResult(null)
     setIsRacing(true)
   }
 
-  const handleRaceRevealed = (result: any) => {
+  const handleRaceComplete = (result: any) => {
+    setRaceResult(result)
     setIsRacing(false)
+    setBetData(null)
     refreshBalance()
-  }
-
-  const handleTradeComplete = () => {
-    refreshBalance()
-  }
-
-  if (!isClient) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
-          <p className="text-gray-300">Loading...</p>
-        </div>
-      </div>
-    )
   }
 
   if (loading) {
@@ -101,120 +107,43 @@ export default function SnailRacingGame() {
   }
 
   return (
-    <ClientOnly fallback={
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
-          <p className="text-gray-300">Loading...</p>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900">
+      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        <div className="flex justify-center mb-6">
+          <img src="/images/snail-racing-logo.png" alt="Snail Racing Game" className="w-64 h-auto" />
         </div>
-      </div>
-    }>
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900">
-        <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <HeaderBar tgUserId={tgUserId} />
 
-        {/* Backend Status Banner */}
-        {backendStatus === "offline" && (
-          <div className="bg-red-600 text-white px-4 py-2 text-center text-sm">
-            ⚠️ Backend Offline - Some features may not work properly
-          </div>
+        <HeaderBar balance={balance} snailAccumulated={snailAccumulated} />
+
+        {!isRacing && !raceResult && <BetPanel balance={balance} onBetStart={handleBetStart} />}
+
+        {(isRacing || raceResult) && (
+          <RaceAnimation
+            isRacing={isRacing}
+            betData={betData}
+            result={raceResult}
+            onRaceComplete={handleRaceComplete}
+          />
         )}
 
-        {/* Tab Navigation */}
-        <div className="flex bg-gray-800 border-b border-gray-700">
-          {(["Racing", "Stocks", "Tickets", "Leaderboard", "Wallet"] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
-                activeTab === tab
-                  ? "bg-blue-600 text-white border-b-2 border-blue-400"
-                  : "text-gray-300 hover:text-white hover:bg-gray-700"
-              }`}
-            >
-              {tab}
-              {/* Status Indicator on Stocks Tab */}
-              {tab === "Stocks" && (
-                <div
-                  className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-                    backendStatus === "online"
-                      ? "bg-green-400"
-                      : backendStatus === "offline"
-                        ? "bg-red-400"
-                        : "bg-yellow-400"
-                  }`}
-                />
-              )}
-            </button>
-          ))}
-        </div>
+        <PurchasePanel onPurchaseComplete={refreshBalance} />
 
-        {/* Tab Content */}
-        <div className="p-4">
-          {activeTab === "Racing" && (
-            <div className="space-y-4">
-              {/* Live Stock Ticker */}
-              <StocksTickerMarquee />
+        <FairnessPanel betData={betData} result={raceResult} />
 
-              {/* Betting Section */}
-              {!isRacing && (
-                <BetPanel
-                  tgUserId={tgUserId}
-                  balance={balance}
-                  onBetPlaced={handleBetPlaced}
-                  onBalanceUpdate={refreshBalance}
-                />
-              )}
+        <RecentResults />
 
-              {/* Race Animation */}
-              {isRacing && betData && (
-                <RaceAnimation
-                  tgUserId={tgUserId}
-                  betId={betData.betId}
-                  commit={betData.commit_hash}
-                  revealMs={betData.reveal_after_ms}
-                  onRevealed={handleRaceRevealed}
-                />
-              )}
+        <footer className="text-center py-4 space-y-2">
+          <p className="text-xs text-gray-400">Made for Telegram Mini App · Stars enabled</p>
+          <button
+            onClick={() => setShowHowItWorks(true)}
+            className="text-xs text-yellow-400 hover:text-yellow-300 underline"
+          >
+            How it works
+          </button>
+        </footer>
 
-              {/* Compact Stocks List */}
-              <StocksList tgUserId={tgUserId} compact={true} onTradeComplete={handleTradeComplete} />
-            </div>
-          )}
-
-          {activeTab === "Stocks" && (
-            <div className="space-y-4">
-              <PortfolioPanel tgUserId={tgUserId} />
-
-              <StocksList tgUserId={tgUserId} onTradeComplete={handleTradeComplete} />
-            </div>
-          )}
-
-          {activeTab === "Tickets" && (
-            <div>
-              <TicketsPanel tgUserId={tgUserId} />
-            </div>
-          )}
-
-          {activeTab === "Leaderboard" && (
-            <div>
-              <Leaderboard />
-            </div>
-          )}
-
-          {activeTab === "Wallet" && (
-            <div className="space-y-4">
-              <PurchaseStars tgUserId={tgUserId} onBalanceUpdate={refreshBalance} />
-              <div className="p-4 bg-gray-800 rounded-2xl text-xs text-gray-400">
-                Game money is for in-app activities (racing entry, stock purchases, etc.) and is NOT directly
-                exchangeable for cash or lottery. Lottery tickets are non-transferable and expire in 7 days.
-              </div>
-            </div>
-          )}
-        </div>
-        </div>
+        {showHowItWorks && <HowItWorksModal onClose={() => setShowHowItWorks(false)} />}
       </div>
-    </ClientOnly>
+    </div>
   )
 }

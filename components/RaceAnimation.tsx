@@ -5,37 +5,30 @@ import { revealBet, getRaceProgression } from "@/lib/api"
 import { getTelegramUser } from "@/lib/telegram"
 
 interface RaceAnimationProps {
-  tgUserId: number | null
-  betId: string
-  commit: string
-  revealMs: number
-  onRevealed: (result: any) => void
+  isRacing: boolean
+  betData: any
+  result: any
+  onRaceComplete: (result: any) => void
 }
 
 const RACE_DURATION_MS = 10000
 
-function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAnimationProps) {
+export default function RaceAnimation({ isRacing, betData, result, onRaceComplete }: RaceAnimationProps) {
   const [countdown, setCountdown] = useState(RACE_DURATION_MS / 1000)
   const [isRevealing, setIsRevealing] = useState(false)
   const [raceProgression, setRaceProgression] = useState<any>(null)
   const [currentFrame, setCurrentFrame] = useState(0)
-  const [result, setResult] = useState<any>(null)
-  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    if (!isRacing || !betData) return
 
-  useEffect(() => {
-    if (!tgUserId || !betId) return
-
-    console.log("[v0] Race starting, fetching progression for bet:", betId)
+    console.log("[v0] Race starting, fetching progression for bet:", betData.bet_id)
     setCountdown(RACE_DURATION_MS / 1000)
     setCurrentFrame(0)
 
     const fetchProgression = async () => {
       try {
-        const progressionResponse = await getRaceProgression(betId)
+        const progressionResponse = await getRaceProgression(betData.bet_id)
         console.log("[v0] Race progression response:", progressionResponse)
         if (progressionResponse.ok) {
           setRaceProgression(progressionResponse.progression)
@@ -69,25 +62,25 @@ function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAn
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [tgUserId, betId])
+  }, [isRacing, betData])
 
   const handleReveal = async () => {
-    if (!tgUserId || !betId) {
-      console.error("[v0] No user ID or bet ID for reveal")
+    if (!betData) {
+      console.error("[v0] No bet data for reveal")
       return
     }
 
-    console.log("[v0] Starting reveal for bet:", betId)
+    console.log("[v0] Starting reveal for bet:", betData.bet_id)
     setIsRevealing(true)
 
     try {
-      const response = await revealBet(tgUserId.toString(), betId)
+      const telegramUser = getTelegramUser()
+      const response = await revealBet(telegramUser.id, betData.bet_id)
       console.log("[v0] Reveal response:", response)
 
       if (response.ok) {
-        console.log("[v0] Race complete, calling onRevealed")
-        setResult(response)
-        onRevealed(response)
+        console.log("[v0] Race complete, calling onRaceComplete")
+        onRaceComplete(response.result)
       } else {
         console.error("[v0] Reveal failed:", response)
       }
@@ -126,17 +119,6 @@ function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAn
       default:
         return "/images/snail-s.png"
     }
-  }
-
-  if (!isClient) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
   }
 
   if (result) {
@@ -236,5 +218,3 @@ function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAn
     </div>
   )
 }
-
-export { RaceAnimation }

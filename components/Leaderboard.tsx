@@ -10,7 +10,7 @@ interface LeaderboardEntry {
   last_play: string | null
 }
 
-export function Leaderboard() {
+export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 
