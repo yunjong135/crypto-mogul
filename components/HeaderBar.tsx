@@ -81,7 +81,3 @@ export default function HeaderBarContainer() {
 
   return <HeaderBar balance={balance} snailAccumulated={snailAccumulated} />
 }
-
-if (!user) {
-  return <div className="p-6 text-center">Please log in to see your SNAIL balance 🐌</div>
-}
