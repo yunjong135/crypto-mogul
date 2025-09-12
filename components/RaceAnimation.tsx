@@ -182,18 +182,9 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
                 <span>Snail {snail}</span>
                 <span>🏁</span>
               </div>
-              <div className="h-12 bg-gray-100 rounded-full relative overflow-hidden">
-                <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-green-400 via-green-300 to-green-200" 
-                     style={{
-                       backgroundImage: `
-                         radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
-                         radial-gradient(circle at 80% 70%, rgba(22, 163, 74, 0.2) 0%, transparent 50%),
-                         linear-gradient(45deg, rgba(34, 197, 94, 0.1) 25%, transparent 25%),
-                         linear-gradient(-45deg, rgba(22, 163, 74, 0.1) 25%, transparent 25%)
-                       `,
-                       backgroundSize: '20px 20px, 15px 15px, 10px 10px, 10px 10px'
-                     }}>
-                </div>
+              <div className="h-12 rounded-full relative overflow-hidden bg-cover bg-center"
+                   style={{ backgroundImage: "url('/images/snailracetrack.jpeg')" }}
+              >
                 <div
                   className="absolute top-1 h-10 w-10 transition-all duration-1000 ease-linear"
                   style={{

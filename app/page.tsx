@@ -86,16 +86,8 @@ export default function SnailRacingGame() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900" 
-         style={{
-           backgroundImage: `
-             radial-gradient(circle at 25% 25%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
-             radial-gradient(circle at 75% 75%, rgba(22, 163, 74, 0.1) 0%, transparent 50%),
-             linear-gradient(45deg, rgba(34, 197, 94, 0.05) 25%, transparent 25%),
-             linear-gradient(-45deg, rgba(22, 163, 74, 0.05) 25%, transparent 25%)
-           `,
-           backgroundSize: '100px 100px, 80px 80px, 40px 40px, 40px 40px'
-         }}>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black"
+    >
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex justify-center mb-6">
           <img src="/images/snail-racing-logo.png" alt="Snail Racing Game" className="w-64 h-auto" />
