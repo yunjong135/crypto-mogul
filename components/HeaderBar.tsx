@@ -5,7 +5,7 @@ interface HeaderBarProps {
 
 export default function HeaderBar({ balance, snailAccumulated }: HeaderBarProps) {
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+    <div className="bg-emerald-500/20 backdrop-blur-sm rounded-lg p-4 border border-emerald-400/30">
       <div className="flex justify-between items-center">
         <div className="text-center">
           <div className="text-sm text-gray-300">Balance</div>

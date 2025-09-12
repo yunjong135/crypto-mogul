@@ -59,7 +59,7 @@ export default function BetPanel({ balance, onBetStart }: BetPanelProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 rounded-2xl shadow-lg p-6 text-white">
       <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">🎯 Place Your Bet</h2>
 
       <div className="mb-6">

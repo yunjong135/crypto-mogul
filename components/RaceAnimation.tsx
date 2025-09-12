@@ -126,7 +126,7 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
     const payout = result.payout || 0
 
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 rounded-2xl shadow-lg p-6 text-white">
         <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">🏁 Race Results</h2>
 
         <div className="text-center space-y-4">

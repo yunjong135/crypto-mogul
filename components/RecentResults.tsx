@@ -85,7 +85,7 @@ export default function RecentResults() {
   const gPercentage = getPercentage(stats.G)
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 rounded-2xl shadow-lg p-6 text-white">
       <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">📊 Recent Results</h2>
       <p className="text-sm text-gray-600 text-center mb-6">Last {stats.total} games</p>
 
