@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 
 interface LeaderboardEntry {
   rank: number
@@ -15,6 +15,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const supabase = createClient()
     fetchLeaderboard()
 
     // Subscribe to realtime updates
@@ -32,6 +33,7 @@ export default function Leaderboard() {
 
   const fetchLeaderboard = async () => {
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from("leaderboard_view")
         .select("*")
