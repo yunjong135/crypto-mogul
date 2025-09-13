@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabaseClient"
 
 interface GameResult {
   winner: string
@@ -20,7 +20,6 @@ export default function RecentResults() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
     fetchRecentResults()
 
     // Subscribe to realtime updates for new bets
@@ -38,14 +37,13 @@ export default function RecentResults() {
 
   const fetchRecentResults = async () => {
     try {
-      const supabase = createClient()
       const { data, error } = await supabase
         .from("bets")
         .select("winner, resolved_at")
         .not("winner", "is", null)
         .not("resolved_at", "is", null)
         .order("resolved_at", { ascending: false })
-        .limit(50)
+        .limit(20)
 
       if (error) {
         console.error("Recent results fetch error:", error)
@@ -85,7 +83,7 @@ export default function RecentResults() {
   const gPercentage = getPercentage(stats.G)
 
   return (
-    <div className="bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 rounded-2xl shadow-lg p-6 text-white">
+    <div className="bg-white rounded-2xl shadow-lg p-6">
       <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">📊 Recent Results</h2>
       <p className="text-sm text-gray-600 text-center mb-6">Last {stats.total} games</p>
 

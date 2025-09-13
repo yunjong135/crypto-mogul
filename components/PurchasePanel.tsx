@@ -42,7 +42,7 @@ export default function PurchasePanel({ onPurchaseComplete }: PurchasePanelProps
   }
 
   return (
-    <div className="bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 rounded-2xl shadow-lg p-6 text-white">
+    <div className="bg-white rounded-2xl shadow-lg p-6">
       <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">💫 Purchase Game Money</h2>
 
       <div className="grid grid-cols-2 gap-3">

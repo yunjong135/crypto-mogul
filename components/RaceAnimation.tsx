@@ -5,30 +5,31 @@ import { revealBet, getRaceProgression } from "@/lib/api"
 import { getTelegramUser } from "@/lib/telegram"
 
 interface RaceAnimationProps {
-  isRacing: boolean
-  betData: any
-  result: any
-  onRaceComplete: (result: any) => void
+  tgUserId: number | null
+  betId: string
+  commit: string
+  revealMs: number
+  onRevealed: (result: any) => void
 }
 
 const RACE_DURATION_MS = 10000
 
-export default function RaceAnimation({ isRacing, betData, result, onRaceComplete }: RaceAnimationProps) {
+function RaceAnimation({ tgUserId, betId, commit, revealMs, onRevealed }: RaceAnimationProps) {
   const [countdown, setCountdown] = useState(RACE_DURATION_MS / 1000)
   const [isRevealing, setIsRevealing] = useState(false)
   const [raceProgression, setRaceProgression] = useState<any>(null)
   const [currentFrame, setCurrentFrame] = useState(0)
 
   useEffect(() => {
-    if (!isRacing || !betData) return
+    if (!tgUserId || !betId) return
 
-    console.log("[v0] Race starting, fetching progression for bet:", betData.bet_id)
+    console.log("[v0] Race starting, fetching progression for bet:", betId)
     setCountdown(RACE_DURATION_MS / 1000)
     setCurrentFrame(0)
 
     const fetchProgression = async () => {
       try {
-        const progressionResponse = await getRaceProgression(betData.bet_id)
+        const progressionResponse = await getRaceProgression(betId)
         console.log("[v0] Race progression response:", progressionResponse)
         if (progressionResponse.ok) {
           setRaceProgression(progressionResponse.progression)
@@ -62,25 +63,24 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isRacing, betData])
+  }, [tgUserId, betId])
 
   const handleReveal = async () => {
-    if (!betData) {
-      console.error("[v0] No bet data for reveal")
+    if (!tgUserId || !betId) {
+      console.error("[v0] No user ID or bet ID for reveal")
       return
     }
 
-    console.log("[v0] Starting reveal for bet:", betData.bet_id)
+    console.log("[v0] Starting reveal for bet:", betId)
     setIsRevealing(true)
 
     try {
-      const telegramUser = getTelegramUser()
-      const response = await revealBet(telegramUser.id, betData.bet_id)
+      const response = await revealBet(tgUserId.toString(), betId)
       console.log("[v0] Reveal response:", response)
 
       if (response.ok) {
-        console.log("[v0] Race complete, calling onRaceComplete")
-        onRaceComplete(response.result)
+        console.log("[v0] Race complete, calling onRevealed")
+        onRevealed(response.result)
       } else {
         console.error("[v0] Reveal failed:", response)
       }
@@ -126,7 +126,7 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
     const payout = result.payout || 0
 
     return (
-      <div className="bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-400 rounded-2xl shadow-lg p-6 text-white">
+      <div className="bg-white rounded-2xl shadow-lg p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">🏁 Race Results</h2>
 
         <div className="text-center space-y-4">
@@ -182,9 +182,8 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
                 <span>Snail {snail}</span>
                 <span>🏁</span>
               </div>
-              <div className="h-12 rounded-full relative overflow-hidden bg-cover bg-center"
-                   style={{ backgroundImage: "url('/images/snailracetrack.jpeg')" }}
-              >
+              <div className="h-12 bg-gray-100 rounded-full relative overflow-hidden">
+                <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-green-200 to-green-100"></div>
                 <div
                   className="absolute top-1 h-10 w-10 transition-all duration-1000 ease-linear"
                   style={{
@@ -219,3 +218,5 @@ export default function RaceAnimation({ isRacing, betData, result, onRaceComplet
     </div>
   )
 }
+
+export { RaceAnimation }
