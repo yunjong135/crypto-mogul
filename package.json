@@ -9,6 +9,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@datadog/browser-logs": "latest",
+    "@datadog/browser-rum": "latest",
     "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-slot": "latest",
     "@radix-ui/react-toast": "latest",
