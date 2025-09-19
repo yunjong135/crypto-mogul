@@ -19,6 +19,8 @@ datadogRum.init({
     sessionReplaySampleRate: 100,
     trackBfcacheViews: true,
     defaultPrivacyLevel: 'mask-user-input',
+    allowedTracingUrls: [
+     "https://api.snail-race.com" 
 });
 
 export const metadata: Metadata = {
